@@ -2,6 +2,7 @@
 #include <math.h>
 #include <fstream>
 #include <sstream>
+#include <chrono>
 using namespace std;
 
 using PathBoundary = std::vector<std::pair<double, double>>;
@@ -68,8 +69,9 @@ int main(int argc, char **argv)
 {
   std::cout << "OSQP RUNNING..." << std::endl;
   PathBoundaryInfo bound_info;
-  build_path_boundary(bound_info, 50.0, 0.5, 0.0);
+  build_path_boundary(bound_info, 50.0, 1.0, 0.0);
 
+  auto t_start = std::chrono::system_clock::now();
   std::array<double, 3> init_state = {2.0, 0.0, 0.0};
   OSQPProblem prob(bound_info.boundary().size(), bound_info.delta_s(),
                    init_state);
@@ -79,7 +81,7 @@ int main(int argc, char **argv)
 
   std::vector<double> x_ref(bound_info.boundary().size(), end_state[0]);
 
-  // prob.set_x_ref(10.0, x_ref);
+  prob.set_x_ref(10.0, x_ref);
 
   prob.set_weight_x(4.0);
   prob.set_weight_dx(20.0);
@@ -103,7 +105,7 @@ int main(int argc, char **argv)
   sprintf(timeinfo, "%d-%d-%d %d-%02d-osqp-traj", 1900 + p->tm_year, 1 + p->tm_mon, p->tm_mday, 8 + p->tm_hour, p->tm_min);
   mycout.open(timeinfo);
 
-  if (prob.Optimize(1000))
+  if (prob.Optimize(100))
   {
     std::cout << "Optimize successful!!" << std::endl;
     for (int i = 0; i < prob.x_.size(); ++i)
@@ -115,6 +117,9 @@ int main(int argc, char **argv)
   {
     std::cout << "Optimize failed!!" << std::endl;
   }
+  auto t_end = std::chrono::system_clock::now();
+  std::chrono::duration<double> diff = t_end - t_start;
+  std::cout << "Time Diff = " << diff.count() * 1000 << " msec.\n";
   // std::cout<<"OSQP END!!!"<<std::endl;
   mycout.close();
   return 0;
