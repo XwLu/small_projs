@@ -2,5 +2,5 @@ matplotlib==3.5.1
 numpy
 protobuf==3.19.4
 PyQt5==5.15.6
-pyqtgraph==0.11.0
+pyqtgraph==0.12.3
 QDarkStyle==3.0.3

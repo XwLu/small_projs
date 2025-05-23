@@ -197,19 +197,16 @@ class MyUI(QWidget):
     def __init__(self, width, height):
         QWidget.__init__(self)
 
-        print("loading...")
         self.dataloader = DataLoader()
         self.dataloader.send_signal.connect(self.dataloader_callback)
         self.dataloader.start()
-        print("load done")
 
         self.desktop_width = width
         self.desktop_height = height
-        self.desktop_height = 1900
-        self.sub_window_size = (self.desktop_height * HEIGHT_RATIO) / 2
+        self.sub_window_size = int(self.desktop_height * HEIGHT_RATIO / 2)
         # self.resize(width, height)
 
-        self.scene_num = self.total_scenec_num = 2
+        self.scene_num = self.total_scene_num = 2
         self.step = self.total_step = 0
         self.frame = self.total_frame = 0
         self.delete_dict = []
@@ -386,7 +383,7 @@ class MyUI(QWidget):
         row.addStretch()
 
         self.__set_relationship(row, scroll_widget, scroll_widget.setLayout)
-        self.__set_relationship(scroll_widget, scroll, scroll.setwidget)
+        self.__set_relationship(scroll_widget, scroll, scroll.setWidget)
         self.__set_relationship(scroll, self.layout, self.layout.addWidget)
 
         row = QHBoxLayout() # 初始化一行
