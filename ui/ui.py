@@ -555,7 +555,7 @@ class MyUI(QWidget):
         self.update_vis(True)
     
     def scene_text_enter(self):
-        msg = self.jump_to_scene.toPlainlext()
+        msg = self.jump_to_scene.toPlainText()
         if '\n' in msg:
             num = int(msg.strip())
             if 0 < num:
