@@ -307,3 +307,100 @@ int main() {
   PrintBoundary(boundary);
   return 0;
 }
+
+// trim by dynamics
+#include <vector>
+#include <cmath>
+#include <iostream>
+
+// 定义状态结构体
+struct VehicleState {
+    double x;       // 位置x
+    double y;       // 位置y
+    double theta;   // 朝向角（弧度）
+    double steer;   // 转向角（弧度）
+    double v;       // 速度
+};
+
+// 归一化角度到[-π, π]范围
+double normalize_angle(double angle) {
+    while (angle > M_PI) angle -= 2.0 * M_PI;
+    while (angle < -M_PI) angle += 2.0 * M_PI;
+    return angle;
+}
+
+// 生成单条轨迹的函数
+std::vector<std::vector<double>> generateOneTrajectory(
+    double x0, double y0, double theta0, double steer0, double wheel_base, double v0,
+    double max_lateral_acc, double longitudinal_decel,
+    bool left_direction)  // true为左转，false为右转
+{
+    const double dt = 0.2; // 时间步长（秒）
+    const double max_steer = M_PI / 3.0; // 最大转向角限制（60度）
+    std::vector<std::vector<double>> trajectory;
+    
+    // 保存初始状态
+    trajectory.push_back({x0, y0, theta0});
+    
+    VehicleState state = {x0, y0, theta0, steer0, v0};
+    double initial_theta = theta0; // 保存初始朝向角用于角度差检查
+
+    while (true) {
+        // 速度减至零则退出
+        if (state.v <= 0.0) break;
+        
+        // 计算当前允许的最大转向角（根据方向选择正负）
+        double desired_steer;
+        if (left_direction) {
+            desired_steer = std::atan((max_lateral_acc * wheel_base) / (state.v * state.v));
+            state.steer = std::min(desired_steer, max_steer);
+        } else {
+            desired_steer = -std::atan((max_lateral_acc * wheel_base) / (state.v * state.v));
+            state.steer = std::max(desired_steer, -max_steer);
+        }
+        
+        // 更新速度（纵向减速度）
+        state.v -= longitudinal_decel * dt;
+        if (state.v < 0.0) state.v = 0.0;
+        
+        // 更新朝向角
+        double d_theta = (state.v * std::tan(state.steer) / wheel_base) * dt;
+        state.theta += d_theta;
+        
+        // 更新位置
+        state.x += state.v * std::cos(state.theta) * dt;
+        state.y += state.v * std::sin(state.theta) * dt;
+        
+        // 保存当前状态到轨迹
+        trajectory.push_back({state.x, state.y, state.theta});
+        
+        // 检查角度差是否超过90度
+        double theta_diff = normalize_angle(state.theta - initial_theta);
+        if (std::fabs(theta_diff) > M_PI / 2.0) break;
+        
+        // 速度为零则退出
+        if (state.v <= 0.0) break;
+    }
+    
+    return trajectory;
+}
+
+// 主函数：生成左右转向轨迹
+void generateTrajectories(
+    double x0, double y0, double theta0, double steer0, double wheel_base, double v0,
+    double max_lateral_acc, double longitudinal_decel,
+    std::vector<std::vector<double>>& left_traj,
+    std::vector<std::vector<double>>& right_traj) 
+{
+    // 生成左转轨迹
+    left_traj = generateOneTrajectory(
+        x0, y0, theta0, steer0, wheel_base, v0,
+        max_lateral_acc, longitudinal_decel, true
+    );
+    
+    // 生成右转轨迹
+    right_traj = generateOneTrajectory(
+        x0, y0, theta0, steer0, wheel_base, v0,
+        max_lateral_acc, longitudinal_decel, false
+    );
+}
